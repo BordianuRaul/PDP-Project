@@ -38,4 +38,8 @@ public class Graph {
         }
         return stringBuilder.toString();
     }
+
+    public List<Integer> getAdjencyList(int node) {
+        return edges.get(node - 1);
+    }
 }

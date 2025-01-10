@@ -13,13 +13,16 @@ public class Graph {
     }
 
     public void addEdge(int from, int to) {
-        if(!edges.get(from).contains(to)) {
+        if(!edges.get(from).contains(to) && from != to) {
             edges.get(from).add(to);
+        }
+        if(!edges.get(to).contains(from) && from != to) {
+            edges.get(to).add(from);
         }
     }
 
     public void addNode() {
-        nodes.add(nodes.size() + 1);
+        nodes.add(nodes.size());
         edges.add(new ArrayList<>());
     }
 
@@ -40,6 +43,6 @@ public class Graph {
     }
 
     public List<Integer> getAdjencyList(int node) {
-        return edges.get(node - 1);
+        return edges.get(node);
     }
 }

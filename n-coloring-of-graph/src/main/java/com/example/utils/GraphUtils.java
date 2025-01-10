@@ -19,6 +19,12 @@ public class GraphUtils {
             int from = random.nextInt(graph.sizeOfNodes());
             int to = random.nextInt(graph.sizeOfNodes());
 
+            // Prevent self-loops
+            while(from == to){
+                from = random.nextInt(graph.sizeOfNodes());
+                to = random.nextInt(graph.sizeOfNodes());
+            }
+
             graph.addEdge(from, to);
         }
     }

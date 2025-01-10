@@ -12,5 +12,15 @@ public class Main {
         addEdges(graph,20);
 
         System.out.println(graph);
+
+        GraphColoring graphColoring = new GraphColoring(graph);
+        int numberOfColors = 3; // Number of colors
+
+        if (graphColoring.solveNColoring(0, numberOfColors)) {
+            System.out.println("Solution found with " + numberOfColors + " colors:");
+            graphColoring.printColoring();
+        } else {
+            System.out.println("No solution exists with " + numberOfColors + " colors.");
+        }
     }
 }

@@ -5,7 +5,7 @@ import java.util.List;
 
 public class Graph {
     List<Integer> nodes;
-    List<List<Integer>> edges;
+    public List<List<Integer>> edges;
 
     public Graph() {
         nodes = new ArrayList<>();
@@ -19,7 +19,7 @@ public class Graph {
     }
 
     public void addNode() {
-        nodes.add(nodes.size() + 1);
+        nodes.add(nodes.size());
         edges.add(new ArrayList<>());
     }
 
@@ -32,14 +32,25 @@ public class Graph {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("Graph:\n");
         for (int i = 0; i < nodes.size(); i++) {
-            stringBuilder.append("Node ").append(nodes.get(i)).append(" -> ");
-            stringBuilder.append(edges.get(i).isEmpty() ? "No edges" : edges.get(i));
+            // Print as 1-indexed
+            stringBuilder.append("Node ").append(i + 1).append(" -> ");
+
+            List<Integer> adjacencyList = edges.get(i);
+            if (adjacencyList.isEmpty()) {
+                stringBuilder.append("No edges");
+            } else {
+                List<Integer> oneBasedAdjacencyList = new ArrayList<>();
+                for (Integer neighbor : adjacencyList) {
+                    oneBasedAdjacencyList.add(neighbor + 1);
+                }
+                stringBuilder.append(oneBasedAdjacencyList);
+            }
             stringBuilder.append("\n");
         }
         return stringBuilder.toString();
     }
 
     public List<Integer> getAdjencyList(int node) {
-        return edges.get(node - 1);
+        return edges.get(node);
     }
 }

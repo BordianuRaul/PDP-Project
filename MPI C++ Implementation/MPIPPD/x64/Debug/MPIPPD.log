@@ -1,0 +1,3 @@
+﻿  MPIPPD.cpp
+D:\eu\Documente\Documente facultate\SEM 5\PPD\MPIPPD\MPIPPD\MPIPPD.cpp(37,19): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+  MPIPPD.vcxproj -> D:\eu\Documente\Documente facultate\SEM 5\PPD\MPIPPD\x64\Debug\MPIPPD.exe

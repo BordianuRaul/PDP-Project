@@ -5,6 +5,7 @@ import com.example.domain.Graph;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 public class LockBasedGraphColoring extends GraphColoring {
 
@@ -18,20 +19,21 @@ public class LockBasedGraphColoring extends GraphColoring {
         for (int i = 0; i < graph.sizeOfNodes(); i++) {
             colorLocks[i] = new ReentrantLock();
         }
-        executor = Executors.newFixedThreadPool(4);
+        executor = Executors.newFixedThreadPool(4); // You could dynamically adjust this based on the graph size
     }
 
     public boolean parallelGraphColoring(int nrColors) {
         int[] colors = new int[graph.sizeOfNodes()];
         CountDownLatch latch = new CountDownLatch(graph.sizeOfNodes());
 
+        // Submit a task to color each node
         for (int node = 0; node < graph.sizeOfNodes(); node++) {
             int currentNode = node;
             executor.submit(() -> {
                 try {
                     colorNode(currentNode, nrColors, colors);
                 } finally {
-                    latch.countDown();
+                    latch.countDown(); // Ensure latch countdown after task completes
                 }
             });
         }
@@ -43,8 +45,12 @@ public class LockBasedGraphColoring extends GraphColoring {
             return false;
         }
 
-        System.out.println("\n ----PARALLEL---- \n");
-        printSolution(colors);
+//        System.out.println("\n ----PARALLEL---- \n");
+//        printSolution(colors);
+
+        // Properly shut down the executor service after all tasks are finished
+        shutdown();
+
         return true;
     }
 
@@ -68,28 +74,49 @@ public class LockBasedGraphColoring extends GraphColoring {
     }
 
     private void lockColors(int node, List<Integer> neighbors) {
-        // Lock the colors in a consistent order to avoid deadlocks
+        // Combine the current node with its neighbors
         List<Integer> nodesToLock = neighbors.stream()
-                .sorted() // Ensure order
-                .toList();
-        for (int neighbor : nodesToLock) {
-            colorLocks[neighbor].lock();
+                .distinct() // Avoid duplicates
+                .collect(Collectors.toList());
+
+        nodesToLock.add(node); // Add the current node
+        nodesToLock.sort(Integer::compareTo); // Sort all locks in a consistent order
+
+        // Lock all nodes in the sorted order
+        for (int current : nodesToLock) {
+            colorLocks[current].lock();
         }
-        colorLocks[node].lock();
     }
 
     private void unlockColors(int node, List<Integer> neighbors) {
-        // Unlock the colors in reverse order
-        colorLocks[node].unlock();
+        // Combine the current node with its neighbors
         List<Integer> nodesToUnlock = neighbors.stream()
-                .sorted((a, b) -> b - a) // Reverse order
-                .toList();
-        for (int neighbor : nodesToUnlock) {
-            colorLocks[neighbor].unlock();
+                .distinct()
+                .collect(Collectors.toList());
+
+        nodesToUnlock.add(node); // Add the current node
+        nodesToUnlock.sort((a, b) -> b - a); // Sort all nodes in reverse order
+
+        // Unlock all nodes in the reverse sorted order
+        for (int current : nodesToUnlock) {
+            colorLocks[current].unlock();
         }
     }
 
-    public void shutdown() {
-        executor.shutdown();
+    // Properly shut down the executor
+    private void shutdown() {
+        try {
+            // Shutdown the executor and await its termination
+            executor.shutdown();
+            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+                if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                    System.err.println("Executor did not terminate in time.");
+                }
+            }
+        } catch (InterruptedException e) {
+            executor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 }

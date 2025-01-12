@@ -2,7 +2,10 @@ package com.example.service;
 
 import com.example.domain.Graph;
 
+import java.io.*;
 import java.util.List;
+
+import static com.example.utils.GraphUtils.addNodes;
 
 public class GraphColoring {
     Graph graph;
@@ -69,5 +72,6 @@ public class GraphColoring {
 
         return colors;
     }
+
 
 }

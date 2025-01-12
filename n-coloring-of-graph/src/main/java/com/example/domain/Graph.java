@@ -45,4 +45,9 @@ public class Graph {
     public List<Integer> getAdjencyList(int node) {
         return edges.get(node);
     }
+
+    public boolean isEdge(int vertex1, int vertex2)
+    {
+        return this.edges.get(vertex1).contains(vertex2);
+    }
 }

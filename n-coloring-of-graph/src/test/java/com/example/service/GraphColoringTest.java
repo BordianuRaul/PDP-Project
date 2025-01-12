@@ -10,8 +10,8 @@ class GraphColoringTest {
     @Test
     void testColoringOfGraph() {
         Graph graph = new Graph();
-        GraphUtils.addNodes(graph, 5000);
-        GraphUtils.addEdges(graph, 10000000);
+        GraphUtils.addNodes(graph, 1000);
+        GraphUtils.addEdges(graph, 100000);
 
         GraphColoring graphColoring = new GraphColoring(graph);
 
@@ -21,7 +21,7 @@ class GraphColoringTest {
         }
 
 
-        for(int node = 0; node < 100; node++) {
+        for(int node = 0; node < graph.sizeOfNodes(); node++) {
             for(int neighbor : graph.getAdjencyList(node)) {
                 if(colors[neighbor] == colors[node]) {
                     System.out.println(node + " " + colors[node] + " " + neighbor + " " + colors[neighbor]);

@@ -4,8 +4,11 @@ import com.example.domain.Graph;
 import com.example.utils.GraphUtils;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
+import static com.example.utils.GraphUtils.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -79,5 +82,29 @@ class ParallelGraphColoringTest {
                 }
             }
         }
+    }
+
+    @Test
+    void printParallel() {
+        Graph graph = new Graph();
+        //generateCompleteGraph(graph, 15);
+        addNodes(graph, 5);
+        addEdges(graph, 10);
+//        //System.out.println(graph);
+//        GraphColoring graphColoring = new GraphColoring(graph);
+//        graphColoring.graphColoring(10);
+//
+        LockBasedGraphColoring lockBasedGraphColoring = new LockBasedGraphColoring(graph);
+        int[] colors = lockBasedGraphColoring.parallelGraphColoringWithChunks(graph.sizeOfNodes());
+        System.out.println(Arrays.toString(colors));
+    }
+
+    @Test
+    void addToFile() throws IOException {
+        Graph graph = new Graph();
+        addNodes(graph, 50);
+        addEdges(graph, 500);
+
+        writeGraphToFile(graph, "src/main/java/com/example/utils/data.txt");
     }
 }

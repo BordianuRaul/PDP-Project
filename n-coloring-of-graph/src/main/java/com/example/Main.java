@@ -1,33 +1,44 @@
 package com.example;
 
+import com.example.MPI.MPIBasedGraphColoring;
 import com.example.domain.Graph;
 import com.example.service.FutureBasedGraphColoring;
 import com.example.service.GraphColoring;
 import com.example.service.LockBasedGraphColoring;
+import mpi.MPI;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
 import static com.example.utils.GraphUtils.*;
 
 public class Main {
-    public static void main(String[] args) throws ExecutionException, InterruptedException {
-        Graph graph = new Graph();
-        //generateCompleteGraph(graph, 15);
-        addNodes(graph, 20);
-        addEdges(graph, 150);
-//        //System.out.println(graph);
-//        GraphColoring graphColoring = new GraphColoring(graph);
-//        graphColoring.graphColoring(10);
-//
-        LockBasedGraphColoring lockBasedGraphColoring = new LockBasedGraphColoring(graph);
-        lockBasedGraphColoring.parallelGraphColoringWithChunks(graph.sizeOfNodes());
+    //static int nrNodes = 20;
+    public static void main(String[] args) throws ExecutionException, InterruptedException, IOException {
+        MPI.Init(args);
 
-//        System.out.println("\nBKT");
-//        int[] colors;
-//        colors = FutureBasedGraphColoring.colorGraph(graph, graph.sizeOfNodes());
-//        System.out.println(Arrays.toString(colors));
+        int id = MPI.COMM_WORLD.Rank();
+        int size = MPI.COMM_WORLD.Size();
 
+        Graph graph = readGraphFromFile( "src/main/java/com/example/utils/data.txt");
+        //System.out.println(graph);
 
+        if (id == 0) {
+
+            try {
+
+                MPIBasedGraphColoring.graphColoringMainMPI(graph, graph.sizeOfNodes(), size);
+            }
+            catch (Exception gce) {
+                gce.printStackTrace();
+            }
+        }
+        else {
+
+            MPIBasedGraphColoring.graphColoringWorkerMPI(id, graph, graph.sizeOfNodes());
+        }
+
+        MPI.Finalize();
     }
 }

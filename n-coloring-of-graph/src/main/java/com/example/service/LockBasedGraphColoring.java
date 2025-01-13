@@ -107,8 +107,8 @@ public class LockBasedGraphColoring extends GraphColoring {
             return null;
         }
 
-        System.out.println("\n ----PARALLEL---- \n");
-        printSolution(colors);
+//        System.out.println("\n ----PARALLEL---- \n");
+//        printSolution(colors);
 
         shutdown();
 

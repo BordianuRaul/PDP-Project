@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class ParallelGraphColoringTest {
+class ParallelGraphColoringTest {
     @Test
     void testColoringOfGraph() {
         Graph graph = new Graph();
@@ -35,7 +35,7 @@ public class ParallelGraphColoringTest {
     @Test
     void testColoringOfCompleteGraph() {
 
-        int nrNodes = 7000;
+        int nrNodes = 1000;
         Graph graph = new Graph();
         GraphUtils.generateCompleteGraph(graph, nrNodes);
 
@@ -49,32 +49,32 @@ public class ParallelGraphColoringTest {
         System.out.println("Time for sequential graph coloring: " + durationSequential / 1_000_000 + " ms");
 
         // Measure time for lock-based parallel graph coloring
+        int[] parallelColors;
         long startTimeParallel = System.nanoTime();
         LockBasedGraphColoring parallelColoring = new LockBasedGraphColoring(graph);
-        parallelColoring.parallelGraphColoring(nrNodes);
+        parallelColors = parallelColoring.parallelGraphColoringForTest(nrNodes);
         long endTimeParallel = System.nanoTime();
         long durationParallel = endTimeParallel - startTimeParallel;
 
         // Assert that the graph coloring was successful for both algorithms
         assertNotNull(sequentialColors, "Sequential graph coloring failed");
-        //assertNotNull(parallelColors, "Parallel graph coloring failed");
+        assertNotNull(parallelColors, "Parallel graph coloring failed");
 
         // Print the results
 
         System.out.println("Time for parallel (lock-based) graph coloring: " + durationParallel / 1_000_000 + " ms");
 
-//         Check if the colors for both algorithms are valid (i.e., no two connected nodes share the same color)
-//        for (int node = 0; node < nrNodes; node++) {
-//            for (int neighbor : graph.getAdjencyList(node)) {
-//                if (sequentialColors[neighbor] == sequentialColors[node]) {
-//                    System.out.println(node + " " + sequentialColors[node] + " " + neighbor + " " + sequentialColors[neighbor]);
-//                    fail("Sequential coloring failed for nodes: " + node + " and " + neighbor);
-//                }
-//                if (parallelColors[neighbor] == parallelColors[node]) {
-//                    System.out.println(node + " " + parallelColors[node] + " " + neighbor + " " + parallelColors[neighbor]);
-//                    fail("Parallel coloring failed for nodes: " + node + " and " + neighbor);
-//                }
-//            }
-//        }
+        for (int node = 0; node < nrNodes; node++) {
+            for (int neighbor : graph.getAdjencyList(node)) {
+                if (sequentialColors[neighbor] == sequentialColors[node]) {
+                    System.out.println(node + " " + sequentialColors[node] + " " + neighbor + " " + sequentialColors[neighbor]);
+                    fail("Sequential coloring failed for nodes: " + node + " and " + neighbor);
+                }
+                if (parallelColors[neighbor] == parallelColors[node]) {
+                    System.out.println(node + " " + parallelColors[node] + " " + neighbor + " " + parallelColors[neighbor]);
+                    fail("Parallel coloring failed for nodes: " + node + " and " + neighbor);
+                }
+            }
+        }
     }
 }

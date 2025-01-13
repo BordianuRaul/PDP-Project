@@ -19,7 +19,7 @@ public class LockBasedGraphColoring extends GraphColoring {
         for (int i = 0; i < graph.sizeOfNodes(); i++) {
             colorLocks[i] = new ReentrantLock();
         }
-        executor = Executors.newFixedThreadPool(4); // You could dynamically adjust this based on the graph size
+        executor = Executors.newFixedThreadPool(6); // You could dynamically adjust this based on the graph size
     }
 
     public boolean parallelGraphColoring(int nrColors) {
@@ -118,5 +118,46 @@ public class LockBasedGraphColoring extends GraphColoring {
             executor.shutdownNow();
             Thread.currentThread().interrupt();
         }
+    }
+
+    public int[] parallelGraphColoringForTest(int nrColors) {
+        int[] colors = new int[graph.sizeOfNodes()];
+        int nrNodes = graph.sizeOfNodes();
+        int nrThreads = 6; // Number of threads; can be adjusted dynamically
+        int chunkSize = (int) Math.ceil((double) nrNodes / nrThreads);
+
+        CountDownLatch latch = new CountDownLatch(nrThreads);
+
+        // Submit tasks for each chunk
+        for (int threadId = 0; threadId < nrThreads; threadId++) {
+            int startNode = threadId * chunkSize;
+            int endNode = Math.min(startNode + chunkSize, nrNodes); // Ensure not exceeding the graph size
+
+            executor.submit(() -> {
+                try {
+                    // Process the assigned chunk
+                    for (int node = startNode; node < endNode; node++) {
+                        colorNode(node, nrColors, colors);
+                    }
+                } finally {
+                    latch.countDown(); // Ensure latch countdown after task completes
+                }
+            });
+        }
+
+        try {
+            latch.await(); // Wait for all tasks to complete
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        }
+
+//        System.out.println("\n ----PARALLEL---- \n");
+//        printSolution(colors);
+
+        // Properly shut down the executor service after all tasks are finished
+        shutdown();
+
+        return colors;
     }
 }

@@ -10,7 +10,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public class GraphColoringFutureBased {
+public class FutureBasedGraphColoring {
     public static int[] colorGraph(Graph graph, int numColors) throws ExecutionException, InterruptedException {
         int[] solution = new int[graph.sizeOfNodes()];
         return colorGraphRec(0, graph, solution, numColors);
@@ -19,19 +19,18 @@ public class GraphColoringFutureBased {
     public static int[] colorGraphRec(int node, Graph graph, int[] solution, int numColors) throws ExecutionException, InterruptedException {
         int total = graph.sizeOfNodes();
         if(node == total) {
-            return solution;  // return solution when all nodes are colored
+            return solution;
         }
 
         ExecutorService executorService = Executors.newFixedThreadPool(numColors);
         List<Future<int[]>> tasks = new ArrayList<>();
 
         for (int color = 1; color <= numColors; color++) {
-            // Validate color
+
             if (isValidColor(node, color, graph, solution)) {
                 int[] newSolution = solution.clone();
                 newSolution[node] = color;
 
-                // Submit the recursive coloring task
                 tasks.add(executorService.submit(() -> colorGraphRec(node + 1, graph, newSolution, numColors)));
             }
         }
@@ -41,15 +40,14 @@ public class GraphColoringFutureBased {
 
             if (isValidPartialSolution(result)) {
                 executorService.shutdownNow();
-                return result;  // Return the valid solution found
+                return result;
             }
         }
 
         executorService.shutdown();
-        return invalidSolution(total);  // If no valid solution found
+        return invalidSolution(total);
     }
 
-    /// Returns true if all the neighbors of a node are different color from it; false otherwise
     private static boolean isValidColor(int node, int color, Graph graph, int[] solution)
     {
         for(int neighbor : graph.getAdjencyList(node))

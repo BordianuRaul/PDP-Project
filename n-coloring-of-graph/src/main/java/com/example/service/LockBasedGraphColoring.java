@@ -14,99 +14,56 @@ public class LockBasedGraphColoring extends GraphColoring {
 
     public LockBasedGraphColoring(Graph graph) {
         super(graph);
-        // Create locks for each color index
         colorLocks = new ReentrantLock[graph.sizeOfNodes()];
         for (int i = 0; i < graph.sizeOfNodes(); i++) {
             colorLocks[i] = new ReentrantLock();
         }
-        executor = Executors.newFixedThreadPool(6); // You could dynamically adjust this based on the graph size
+        executor = Executors.newFixedThreadPool(graph.sizeOfNodes());
     }
-
-    public boolean parallelGraphColoring(int nrColors) {
-        int[] colors = new int[graph.sizeOfNodes()];
-        CountDownLatch latch = new CountDownLatch(graph.sizeOfNodes());
-
-        // Submit a task to color each node
-        for (int node = 0; node < graph.sizeOfNodes(); node++) {
-            int currentNode = node;
-            executor.submit(() -> {
-                try {
-                    colorNode(currentNode, nrColors, colors);
-                } finally {
-                    latch.countDown(); // Ensure latch countdown after task completes
-                }
-            });
-        }
-
-        try {
-            latch.await(); // Wait for all tasks to complete
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return false;
-        }
-
-//        System.out.println("\n ----PARALLEL---- \n");
-//        printSolution(colors);
-
-        // Properly shut down the executor service after all tasks are finished
-        shutdown();
-
-        return true;
-    }
-
     private void colorNode(int node, int nrColors, int[] colors) {
         List<Integer> neighbors = graph.getAdjencyList(node);
 
-        // Lock the node's color and its neighbors' colors
         lockColors(node, neighbors);
         try {
-            // Try coloring the node
             for (int color = 1; color <= nrColors; color++) {
                 if (isSafe(node, color, colors)) {
                     colors[node] = color;
-                    break; // Assign the first valid color
+                    break;
                 }
             }
         } finally {
-            // Unlock the node's color and its neighbors' colors
             unlockColors(node, neighbors);
         }
     }
 
     private void lockColors(int node, List<Integer> neighbors) {
-        // Combine the current node with its neighbors
         List<Integer> nodesToLock = neighbors.stream()
-                .distinct() // Avoid duplicates
+                .distinct()
                 .collect(Collectors.toList());
 
-        nodesToLock.add(node); // Add the current node
-        nodesToLock.sort(Integer::compareTo); // Sort all locks in a consistent order
+        nodesToLock.add(node);
+        nodesToLock.sort(Integer::compareTo);
 
-        // Lock all nodes in the sorted order
         for (int current : nodesToLock) {
             colorLocks[current].lock();
         }
     }
 
     private void unlockColors(int node, List<Integer> neighbors) {
-        // Combine the current node with its neighbors
         List<Integer> nodesToUnlock = neighbors.stream()
                 .distinct()
                 .collect(Collectors.toList());
 
-        nodesToUnlock.add(node); // Add the current node
-        nodesToUnlock.sort((a, b) -> b - a); // Sort all nodes in reverse order
+        nodesToUnlock.add(node);
+        nodesToUnlock.sort((a, b) -> b - a);
 
-        // Unlock all nodes in the reverse sorted order
         for (int current : nodesToUnlock) {
             colorLocks[current].unlock();
         }
     }
 
-    // Properly shut down the executor
     private void shutdown() {
         try {
-            // Shutdown the executor and await its termination
             executor.shutdown();
             if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
                 executor.shutdownNow();
@@ -120,42 +77,39 @@ public class LockBasedGraphColoring extends GraphColoring {
         }
     }
 
-    public int[] parallelGraphColoringForTest(int nrColors) {
+    public int[] parallelGraphColoringWithChunks(int nrColors) {
         int[] colors = new int[graph.sizeOfNodes()];
         int nrNodes = graph.sizeOfNodes();
-        int nrThreads = 6; // Number of threads; can be adjusted dynamically
+        int nrThreads = 6;
         int chunkSize = (int) Math.ceil((double) nrNodes / nrThreads);
 
         CountDownLatch latch = new CountDownLatch(nrThreads);
 
-        // Submit tasks for each chunk
         for (int threadId = 0; threadId < nrThreads; threadId++) {
             int startNode = threadId * chunkSize;
-            int endNode = Math.min(startNode + chunkSize, nrNodes); // Ensure not exceeding the graph size
+            int endNode = Math.min(startNode + chunkSize, nrNodes);
 
             executor.submit(() -> {
                 try {
-                    // Process the assigned chunk
                     for (int node = startNode; node < endNode; node++) {
                         colorNode(node, nrColors, colors);
                     }
                 } finally {
-                    latch.countDown(); // Ensure latch countdown after task completes
+                    latch.countDown();
                 }
             });
         }
 
         try {
-            latch.await(); // Wait for all tasks to complete
+            latch.await();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return null;
         }
 
-//        System.out.println("\n ----PARALLEL---- \n");
-//        printSolution(colors);
+        System.out.println("\n ----PARALLEL---- \n");
+        printSolution(colors);
 
-        // Properly shut down the executor service after all tasks are finished
         shutdown();
 
         return colors;

@@ -4,25 +4,28 @@ import com.example.domain.Graph;
 import com.example.utils.GraphUtils;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.ExecutionException;
+
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class ParallelGraphColoringTest {
     @Test
-    void testColoringOfGraph() {
+    void testColoringOfGraph() throws ExecutionException, InterruptedException {
         Graph graph = new Graph();
-        GraphUtils.addNodes(graph, 100);
-        GraphUtils.addEdges(graph, 10000);
+        GraphUtils.addNodes(graph, 15);
+        GraphUtils.addEdges(graph, 60);
 
-        LockBasedGraphColoring graphColoring = new LockBasedGraphColoring(graph);
+        //LockBasedGraphColoring graphColoring = new LockBasedGraphColoring(graph);
 
-        int[] colors = graphColoring.graphColoringForTest(5000);
+        //int[] colors = graphColoring.graphColoringForTest(5000);
+        int[] colors = FutureBasedGraphColoring.colorGraph(graph, graph.sizeOfNodes());
         if(colors == null) {
             fail("Graph coloring failed");
         }
 
 
-        for(int node = 0; node < 100; node++) {
+        for(int node = 0; node < graph.sizeOfNodes(); node++) {
             for(int neighbor : graph.getAdjencyList(node)) {
                 if(colors[neighbor] == colors[node]) {
                     System.out.println(node + " " + colors[node] + " " + neighbor + " " + colors[neighbor]);
@@ -52,7 +55,7 @@ class ParallelGraphColoringTest {
         int[] parallelColors;
         long startTimeParallel = System.nanoTime();
         LockBasedGraphColoring parallelColoring = new LockBasedGraphColoring(graph);
-        parallelColors = parallelColoring.parallelGraphColoringForTest(nrNodes);
+        parallelColors = parallelColoring.parallelGraphColoringWithChunks(nrNodes);
         long endTimeParallel = System.nanoTime();
         long durationParallel = endTimeParallel - startTimeParallel;
 

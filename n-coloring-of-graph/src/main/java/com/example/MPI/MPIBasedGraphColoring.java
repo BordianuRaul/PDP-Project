@@ -5,14 +5,18 @@ import mpi.MPI;
 
 import java.util.Arrays;
 
-
 public class MPIBasedGraphColoring {
 
-    public static void graphColoringMainMPI(Graph graph, int numColors, int mpiSize) throws InterruptedException {
-        int[] solution = new int[graph.sizeOfNodes()];
-        Arrays.fill(solution, 0);
+    private final Graph graph;
+    private final int mpiSize;
 
-        System.out.println("Main process starting graph coloring with " + numColors + " colors and " + mpiSize + " processes.");
+    public MPIBasedGraphColoring(Graph graph, int mpiSize) {
+        this.graph = graph;
+        this.mpiSize = mpiSize;
+    }
+
+    public void colorMain(int numColors) throws InterruptedException {
+        int[] solution = new int[graph.sizeOfNodes()];
 
         int[] initialSolution = new int[graph.sizeOfNodes() + 1]; // Node + Solution
         initialSolution[0] = -1; // No node selected yet
@@ -24,23 +28,22 @@ public class MPIBasedGraphColoring {
         }
 
         // Call the recursive graph coloring function for the main process
-        int[] result = graphColoringRecMPI(-1, graph, numColors, solution, 0, mpiSize);
+        int[] result = graphColoringRecursive(-1, numColors, solution, 0);
 
         if (result[0] == -1) {
             throw new RuntimeException("No solution found!");
         } else {
-            System.out.println("Is solution correct: " + isCorrect(solution, graph));
+            System.out.println("Is solution correct: " + isSolutionCorrect(solution));
             System.out.println("Final solution: " + Arrays.toString(result));
         }
     }
 
-    public static void graphColoringWorkerMPI(int mpiId, Graph graph, int numColors) throws InterruptedException {
+    public void handleColor(int mpiId, int numColors) throws InterruptedException {
         int nodeCount = graph.sizeOfNodes();
         int[] initialSolution = new int[nodeCount + 1];
 
-        // Receive initial solution from main process
+        // Receive initial solution from the main process
         MPI.COMM_WORLD.Recv(initialSolution, 0, nodeCount + 1, MPI.INT, 0, 0);
-        // System.out.println("Worker process " + mpiId + " received initial solution: " + Arrays.toString(initialSolution));
 
         // Extract the previous node and the current coloring codes
         int prevNode = initialSolution[0];
@@ -48,23 +51,21 @@ public class MPIBasedGraphColoring {
         System.arraycopy(initialSolution, 1, initialCodes, 0, initialCodes.length);
 
         // Apply graph coloring algorithm recursively
-        int[] newCodes = graphColoringRecMPI(prevNode, graph, numColors, initialCodes, mpiId, MPI.COMM_WORLD.Size());
+        int[] newCodes = graphColoringRecursive(prevNode, numColors, initialCodes, mpiId);
 
         // Send updated coloring solution back to the main process
         int[] buf = new int[nodeCount + 1];
         buf[0] = nodeCount - 1;
         System.arraycopy(newCodes, 0, buf, 1, newCodes.length);
 
-        // System.out.println("Worker process " + mpiId + " sending updated solution: " + Arrays.toString(buf));
-
         MPI.COMM_WORLD.Isend(buf, 0, nodeCount + 1, MPI.INT, 0, 0);
     }
 
-    private static int[] graphColoringRecMPI(int solutionNode, Graph graph, int numColors, int[] solution, int mpiId, int mpiSize) throws InterruptedException {
+    private int[] graphColoringRecursive(int solutionNode, int numColors, int[] solution, int mpiId) throws InterruptedException {
         int nodeCount = graph.sizeOfNodes();
 
         // Check if the current solution is valid with the isCodeValid function
-        if (!isCodeValid(solutionNode, solution, graph)) {
+        if (!isCodeValid(solutionNode, solution)) {
             return getInvalidSolution(nodeCount);
         }
 
@@ -86,7 +87,7 @@ public class MPIBasedGraphColoring {
             MPI.COMM_WORLD.Isend(buf, 0, buf.length, MPI.INT, (mpiId + 1) % mpiSize, 0);
 
             // Recursive call for the next node
-            int[] result = graphColoringRecMPI(changeNode, graph, numColors, solution, mpiId, mpiSize);
+            int[] result = graphColoringRecursive(changeNode, numColors, solution, mpiId);
             if (result[0] != -1) {
                 return result;  // Solution found, return it
             }
@@ -96,7 +97,7 @@ public class MPIBasedGraphColoring {
         return getInvalidSolution(nodeCount);
     }
 
-    private static boolean isCodeValid(int node, int[] solution, Graph graph) {
+    private boolean isCodeValid(int node, int[] solution) {
         // Check for conflicts with adjacent nodes
         for (int currentNode = 0; currentNode < node; currentNode++) {
             if (graph.isEdge(node, currentNode) && solution[node] == solution[currentNode]) {
@@ -106,13 +107,13 @@ public class MPIBasedGraphColoring {
         return true;
     }
 
-    private static int[] getInvalidSolution(int length) {
+    private int[] getInvalidSolution(int length) {
         int[] array = new int[length];
         Arrays.fill(array, -1);
         return array;
     }
 
-    private static boolean isCorrect(int[] solution, Graph graph) {
+    private boolean isSolutionCorrect(int[] solution) {
         for (int node = 0; node < graph.sizeOfNodes(); node++) {
             for (int neighbor : graph.getAdjencyList(node)) {
                 if (solution[neighbor] == solution[node]) {

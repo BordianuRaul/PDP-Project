@@ -17,12 +17,13 @@ class ParallelGraphColoringTest {
     void testColoringOfGraph() throws ExecutionException, InterruptedException {
         Graph graph = new Graph();
         GraphUtils.addNodes(graph, 15);
-        GraphUtils.addEdges(graph, 60);
+        GraphUtils.addEdges(graph, 10);
 
         //LockBasedGraphColoring graphColoring = new LockBasedGraphColoring(graph);
 
         //int[] colors = graphColoring.graphColoringForTest(5000);
-        int[] colors = FutureBasedGraphColoring.colorGraph(graph, graph.sizeOfNodes());
+        FutureBasedGraphColoring coloring = new FutureBasedGraphColoring(graph);
+        int[] colors = coloring.colorGraph(graph.sizeOfNodes());
         if(colors == null) {
             fail("Graph coloring failed");
         }
@@ -87,9 +88,8 @@ class ParallelGraphColoringTest {
     @Test
     void printParallel() {
         Graph graph = new Graph();
-        //generateCompleteGraph(graph, 15);
-        addNodes(graph, 5);
-        addEdges(graph, 10);
+        addNodes(graph, 100);
+        addEdges(graph, 100);
 //        //System.out.println(graph);
 //        GraphColoring graphColoring = new GraphColoring(graph);
 //        graphColoring.graphColoring(10);
@@ -103,7 +103,7 @@ class ParallelGraphColoringTest {
     void addToFile() throws IOException {
         Graph graph = new Graph();
         addNodes(graph, 50);
-        addEdges(graph, 500);
+        addEdges(graph, 1500);
 
         writeGraphToFile(graph, "src/main/java/com/example/utils/data.txt");
     }

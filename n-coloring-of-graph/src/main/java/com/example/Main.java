@@ -2,35 +2,28 @@ package com.example;
 
 import com.example.MPI.MPIBasedGraphColoring;
 import com.example.domain.Graph;
+import com.example.utils.GraphUtils;
 import mpi.MPI;
 
-import java.io.IOException;
-
-import static com.example.utils.GraphUtils.*;
 
 public class Main {
-
-    public static void main(String[] args) throws InterruptedException, IOException {
+    public static void main(String[] args) throws Exception {
         MPI.Init(args);
 
         int id = MPI.COMM_WORLD.Rank();
         int size = MPI.COMM_WORLD.Size();
-
-        Graph graph = readGraphFromFile( "src/main/java/com/example/utils/data.txt");
-        MPIBasedGraphColoring mpiBasedGraphColoring = new MPIBasedGraphColoring(graph, size);
+        Graph graph = GraphUtils.readGraphFromFile("n-coloring-of-graph/src/main/java/com/example/utils/data.txt");
+        int nrColors = 3;
+        MPIBasedGraphColoring graphColoring = new MPIBasedGraphColoring(graph, nrColors, size);
 
         if (id == 0) {
             try {
-
-                mpiBasedGraphColoring.colorMain(graph.sizeOfNodes());
-            }
-            catch (Exception gce) {
+                graphColoring.colorMain();
+            } catch (Exception gce) {
                 gce.printStackTrace();
             }
-        }
-        else {
-
-            mpiBasedGraphColoring.handleColor(id, graph.sizeOfNodes());
+        } else {
+            graphColoring.handleColor(id);
         }
 
         MPI.Finalize();
